@@ -87,7 +87,7 @@ class CoreTests {
     }
 
     @Test fun wavRoundTrip() {
-        val f = File.createTempFile("t", ".wav")
+        val f = File.createTempFile("test", ".wav")
         try {
             val samples = ShortArray(500) { (it * 7 - 1000).toShort() }
             WavUtil.write(f, samples, 22050)
