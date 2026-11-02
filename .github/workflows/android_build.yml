@@ -1,0 +1,49 @@
+name: Android Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Unit tests
+        run: gradle --no-daemon --console=plain testDebugUnitTest 2>&1 | tee test.log
+        shell: bash
+
+      - name: Build debug APK
+        run: gradle --no-daemon --console=plain assembleDebug 2>&1 | tee build.log
+        shell: bash
+
+      - name: Surface errors
+        if: failure()
+        run: |
+          for f in test.log build.log; do
+            [ -f "$f" ] && grep -E "^e: |error:|FAILED|What went wrong|Could not|Unresolved" -A2 "$f" | head -40 | tr '\n' '|' | cut -c1-3500 | sed 's/^/::error::/'
+          done || true
+
+      - name: Name APK and checksum
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/debug/app-debug.apk out/Movie-Recapee-debug.apk
+          (cd out && sha256sum Movie-Recapee-debug.apk | tee Movie-Recapee-debug.apk.sha256)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Movie-Recapee-debug-apk
+          path: out/*
+          if-no-files-found: error

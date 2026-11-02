@@ -1,0 +1,2 @@
+-keep class com.movierecapee.domain.** { *; }
+-keep class com.movierecapee.data.remote.** { *; }
